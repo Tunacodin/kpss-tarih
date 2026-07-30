@@ -69,6 +69,24 @@ body {
 
 .hud .spacer { flex: 1; }
 
+.music-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px; height: 38px;
+  padding: 0;
+  border: 1px solid var(--gold-dim);
+  border-radius: 2px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 17px;
+  line-height: 1;
+  transition: border-color .2s ease, background .2s ease;
+}
+.music-toggle:hover { border-color: var(--gold); }
+.music-toggle.muted { opacity: .55; }
+
 .stat {
   display: flex;
   align-items: center;

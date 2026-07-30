@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Marcellus&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="cinema.css" />
 </head>
 <body>
   <div class="app">
@@ -20,6 +21,10 @@
       </div>
 
       <div class="spacer"></div>
+
+      <button class="music-toggle" id="music-toggle" title="Arka plan müziği aç/kapat" aria-label="Müzik">
+        <span class="mt-ico">🔊</span>
+      </button>
 
       <div class="stat">
         <div class="level-chip">
@@ -37,6 +42,11 @@
       </div>
 
       <div class="stat badges" id="badges"></div>
+
+      <button class="cinema-open" id="cinema-open" title="Sinematik zaman yolculuğu">
+        <span class="co-ico">🎬</span>
+        <span class="co-txt">Sinematik<br>Yolculuk</span>
+      </button>
     </header>
 
     <!-- Ana gövde -->
@@ -60,5 +70,7 @@
   <script src="data.js"></script>
   <script src="data_ek.js"></script>
   <script src="app.js"></script>
+  <script src="cinema.js"></script>
+  <script src="music.js"></script>
 </body>
 </html>
