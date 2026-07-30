@@ -1151,7 +1151,7 @@ var ATA_ICERIK = {
       "Batum (Moskova, 1921) Misak-ı Milli'den verilen ilk tavizdir."
     ],
     gorseller: [
-      { src: "images/sakarya.jpg", cap: "Sakarya Meydan Muharebesi", not: "1921" },
+      { src: "images/sakarya.jpg", cap: "Sakarya sonrası Gazi ve Mareşal Mustafa Kemal", not: "Ankara · Aralık 1921" },
       { src: "images/buyuk-taarruz.jpg", cap: "Büyük Taarruz cephe haritası", not: "Ağustos 1922" }
     ]
   }
@@ -1197,7 +1197,7 @@ ATA_ICERIK.lozan_devrim = {
   ],
   gorseller: [
     { src: "images/lozan-heyeti.jpg", cap: "Lozan'da İsmet Paşa ve Türk heyeti", not: "1923" },
-    { src: "images/cumhuriyet-ilani.jpg", cap: "Cumhuriyet'in ilanı", not: "29 Ekim 1923" }
+    { src: "images/cumhuriyet-ilani.jpg", cap: "Atatürk Cumhuriyet töreninde", not: "Onuncu Yıl · 1933" }
   ]
 };
 
@@ -1357,7 +1357,7 @@ ATA_ICERIK.cagdas = {
     "Varşova Paktı, Doğu Bloku'nun askeri ittifakıdır."
   ],
   gorseller: [
-    { src: "images/kore-savasi.jpg", cap: "Kore'de Türk Tugayı", not: "1950" },
+    { src: "images/kore-savasi.jpg", cap: "Türk Tugayı komutanı Tahsin Yazıcı, Kore", not: "1950–51" },
     { src: "images/turk-cumhuriyetleri.jpg", cap: "Bağımsız Türk Cumhuriyetleri", not: "1991 sonrası harita" }
   ]
 };

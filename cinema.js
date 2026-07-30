@@ -7,7 +7,10 @@
 (function () {
   "use strict";
 
-  const MUSIC_SRC = "osmanli_backgorund_music.mp4";
+  const MUSIC_SRC = "osmanli_backgorund_music.mp4";     // ana tema
+  const MUSIC_ERA = { cumhuriyet: "savas_muzigi_kurtulus.mp4" };  // döneme özel tema (Kurtuluş)
+  const TRACK_AD  = { cumhuriyet: "Kurtuluş teması" };
+  const trackFor = era => encodeURI(MUSIC_ERA[era] || MUSIC_SRC);
   const AUTOPLAY_MS = 11000;   // otomatik oynatmada slayt süresi
 
   // ——— Yolculuk listesi: kronolojik padişahlar + dönem kapıları ———
@@ -74,6 +77,7 @@
         <div class="cin-controls">
           <button class="cin-btn" id="cin-music" title="Müzik aç/kapa">♪ Müzik</button>
           <button class="cin-btn" id="cin-auto" title="Otomatik oynat">▶ Oto</button>
+          <span class="cin-track" id="cin-track"></span>
           <span class="cin-pos" id="cin-pos"></span>
         </div>
         <div class="cin-rail" id="cin-rail"></div>
@@ -189,6 +193,11 @@
     root.querySelector("#cin-era").innerHTML =
       `<span class="cin-era-pill" style="--era:${e.renk}">${e.ad}</span><span class="cin-era-yr">${e.yil}</span>`;
 
+    // döneme özel müzik teması
+    setTrack(trackFor(era));
+    const trackEl = root.querySelector("#cin-track");
+    if (trackEl) trackEl.textContent = "♫ " + (TRACK_AD[era] || "Osmanlı teması");
+
     const stage = root.querySelector("#cin-stage");
     stage.innerHTML = it.type === "gate" ? gateSlide(it) : sultanSlide(it);
 
@@ -239,20 +248,30 @@
   }
 
   // ——— Müzik (ana uygulama + sinema ortak tek ses) ———
+  let curTrack = null;
   function getAudio() {
     if (audioEl) return audioEl;
     audioEl = document.createElement("video");
     audioEl.id = "bgm-audio";
     audioEl.loop = true; audioEl.playsInline = true; audioEl.preload = "auto";
     audioEl.style.cssText = "position:fixed;width:2px;height:2px;opacity:0;pointer-events:none;left:-10px;top:-10px;";
-    const src = document.createElement("source");
-    src.src = MUSIC_SRC; src.type = "video/mp4";
-    audioEl.appendChild(src);
+    curTrack = trackFor(null);
+    audioEl.src = curTrack;
     audioEl.volume = 0.55;
     document.body.appendChild(audioEl);
     audioEl.addEventListener("play", syncMusicUI);
     audioEl.addEventListener("pause", syncMusicUI);
     return audioEl;
+  }
+  // Dönem temasını değiştir; çalıyorsa yeni parçaya devam et.
+  function setTrack(src) {
+    getAudio();
+    if (curTrack === src) return;
+    const wasPlaying = !audioEl.paused;
+    curTrack = src;
+    audioEl.src = src;
+    audioEl.load();
+    if (wasPlaying) { const p = audioEl.play(); if (p && p.catch) p.catch(() => {}); }
   }
   function startMusic() {
     getAudio();
@@ -329,7 +348,9 @@
   function closeCinema() {
     opened = false;
     stopAuto();
-    // müzik global arka plan olduğu için çıkışta durdurulmaz (HUD 🔊 ile kapatılır)
+    // müzik global arka plan olduğu için çıkışta durdurulmaz (HUD 🔊 ile kapatılır);
+    // ana temaya (Osmanlı) dönülür.
+    setTrack(trackFor(null));
     root.classList.remove("show");
     document.body.classList.remove("cinema-on");
     document.removeEventListener("keydown", keyHandler);

@@ -225,6 +225,7 @@ body.cinema-on { overflow: hidden; }
 }
 .cin-btn:hover { border-color: var(--gold-dim); color: var(--ink); }
 .cin-btn.on { border-color: var(--gold); color: var(--gold); }
+.cin-track { font-size: 12px; letter-spacing: 1.5px; color: var(--gold); opacity: .85; }
 .cin-pos { margin-left: auto; font-size: 12px; letter-spacing: 2px; color: var(--ink-3); }
 
 .cin-rail { display: flex; gap: 6px; }
