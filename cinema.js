@@ -124,23 +124,46 @@
       </div>`;
   }
 
+  // Görsel sütunu: bölüme özel görselleri (gorseller) varsa galeri; yoksa tek portre.
+  function visualsHTML(s, e) {
+    const esc = t => String(t).replace(/"/g, "&quot;");
+    // "hepsinde atatürk olmasın": ataturk.jpg'e düşen ama kendi görselleri olan
+    // bölümlerde (Kurtuluş Savaşı vb.) galeri göster.
+    const galeri = (s.gorseller && s.gorseller.length && s.foto === "images/ataturk.jpg") ? s.gorseller : null;
+
+    if (galeri) {
+      const ilk = galeri[0];
+      const thumbs = galeri.map((g, i) => `
+        <button class="cin-thumb ${i === 0 ? "on" : ""}" data-src="${g.src}" data-cap="${esc(g.cap)}" style="--era:${e.renk}" title="${esc(g.cap)}">
+          <img src="${g.src}" alt="${esc(g.cap)}" onerror="this.parentElement.style.display='none'">
+        </button>`).join("");
+      return `
+        <div class="cin-portre-wrap gallery">
+          <img class="cin-portre" id="cin-gimg" src="${ilk.src}" alt="${esc(ilk.cap)}"
+               onerror="this.closest('.cin-portre-wrap').classList.add('noimg')">
+          <div class="cin-cap" id="cin-gcap">${ilk.cap}</div>
+        </div>
+        <div class="cin-thumbs">${thumbs}</div>`;
+    }
+
+    const img = foto(s);
+    return img
+      ? `<div class="cin-portre-wrap"><img class="cin-portre" src="${img}" alt="${s.ad}"
+            onerror="this.closest('.cin-portre-wrap').classList.add('noimg')"></div>`
+      : `<div class="cin-portre-wrap noimg"><span class="cin-seal">۩</span></div>`;
+  }
+
   function sultanSlide(it) {
     const s = it.s;
     const e = ERAS[s.era];
-    const img = foto(s);
     const bas = yilBas(s);
     const lakap = s.lakap ? `<span class="cin-lakap">“${s.lakap}”</span>` : "";
     const no = s.no !== null ? `${s.no}. Padişah` : (s.araDonem ? "Ara Dönem" : "Dönem · Konu");
     const anlar = kilitAnlar(s);
 
-    const portre = img
-      ? `<div class="cin-portre-wrap"><img class="cin-portre" src="${img}" alt="${s.ad}"
-            onerror="this.closest('.cin-portre-wrap').classList.add('noimg')"></div>`
-      : `<div class="cin-portre-wrap noimg"><span class="cin-seal">۩</span></div>`;
-
     return `
       <div class="cin-slide sultan" style="--era:${e.renk}">
-        <div class="cin-portre-col">${portre}</div>
+        <div class="cin-portre-col">${visualsHTML(s, e)}</div>
         <div class="cin-info-col">
           <div class="cin-era-tag"><span class="cin-dot"></span>${e.ad} · ${no}</div>
           <div class="cin-year"><span class="cin-count" data-to="${bas}">${bas}</span></div>
@@ -172,6 +195,19 @@
     // yıl sayacı
     const cnt = stage.querySelector(".cin-count");
     if (cnt) countUp(cnt);
+
+    // galeri thumbnail'ları — tıklayınca ana görsel + başlık değişir
+    const thumbs = [...stage.querySelectorAll(".cin-thumb")];
+    if (thumbs.length) {
+      const gimg = stage.querySelector("#cin-gimg");
+      const gcap = stage.querySelector("#cin-gcap");
+      thumbs.forEach(t => t.addEventListener("click", () => {
+        if (gimg) { gimg.src = t.dataset.src; gimg.style.animation = "none"; void gimg.offsetWidth; gimg.style.animation = ""; }
+        if (gcap) gcap.textContent = t.dataset.cap;
+        thumbs.forEach(x => x.classList.remove("on"));
+        t.classList.add("on");
+      }));
+    }
 
     // konum + ray
     root.querySelector("#cin-pos").textContent = `${idx + 1} / ${JOURNEY.length}`;
