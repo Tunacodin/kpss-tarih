@@ -1,0 +1,14 @@
+# Canlıya gerekmeyen büyük kaynak dosyaları
+*.pdf
+
+# Geçici/işlem dosyaları
+pdf_pages/
+harita_aday/
+*.output
+wiki.html
+pdf_text.txt
+
+# Sistem
+.DS_Store
+Thumbs.db
+node_modules/
