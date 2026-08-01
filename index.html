@@ -9,6 +9,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Marcellus&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="cinema.css" />
+  <script>
+    /* Temayı boyamadan önce uygula (FOUC önlemi) */
+    (function () {
+      try {
+        var t = localStorage.getItem("kpss-theme");
+        if (t === "light") document.documentElement.setAttribute("data-theme", "light");
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
   <div class="app">
@@ -38,6 +47,8 @@
       </div>
 
       <div class="stat badges" id="badges"></div>
+
+      <button class="theme-toggle" id="theme-toggle" title="Açık / koyu tema" aria-label="Tema değiştir">☾</button>
 
       <button class="music-toggle" id="music-toggle" title="Arka plan müziği" aria-label="Müzik aç/kapat"></button>
 

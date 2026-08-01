@@ -19,6 +19,27 @@
   font-synthesis: none;
 }
 
+/* ————— AÇIK TEMA —————
+   Koyu temanın aynı kimliğinin açık varyantı: teal-tonlu açık zemin +
+   beyaz kartlar + tuğra altını & garnet vurgular. Gölge yok, hairline border. */
+:root[data-theme="light"] {
+  --bg:        #eaf0ec;   /* teal-tonlu açık zemin (klişe beyaz değil) */
+  --bg-2:      #e2eae4;   /* panel zemini */
+  --surface:   #ffffff;   /* beyaz kart yüzeyi */
+  --surface-2: #edf3ee;   /* hover / aktif yüzey */
+  --line:      #c3d2ca;   /* hairline border */
+  --line-soft: #d6e0da;
+  --ink:       #14282a;   /* birincil metin (koyu petrol) */
+  --ink-2:     #445b59;   /* ikincil metin */
+  --ink-3:     #6f8785;   /* soluk metin */
+  --gold:      #b1832c;   /* tuğra altını — açık zeminde okunur ton */
+  --gold-dim:  #8f6923;
+  --garnet:    #ab4c43;   /* savaş / uyarı vurgusu */
+  --ok:        #3f8b64;   /* doğru cevap (açık zeminde koyulaştırıldı) */
+}
+/* açık temada dolgu üstü koyu metin ihtiyacı olan yerler için altını biraz doygun tut */
+:root[data-theme="light"] .vbtn.active { color: #fff; }
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body { height: 100%; }
@@ -87,6 +108,20 @@ body {
   background: var(--surface);
 }
 .music-toggle svg { display: block; }
+
+.theme-toggle {
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  padding: 0;
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--gold);
+  cursor: pointer;
+  font-size: 15px; line-height: 1;
+  transition: border-color .2s ease, color .2s ease, background .2s ease;
+}
+.theme-toggle:hover { background: var(--surface); }
 
 .stat {
   display: flex;

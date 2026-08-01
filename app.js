@@ -655,6 +655,28 @@ function toast(msg) {
   toastT = setTimeout(() => el.classList.remove("show"), 2200);
 }
 
+/* ————— Tema (açık / koyu) ————— */
+const THEME_KEY = "kpss-theme";
+function currentTheme() {
+  return document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+}
+function applyTheme(t) {
+  if (t === "light") document.documentElement.setAttribute("data-theme", "light");
+  else document.documentElement.removeAttribute("data-theme");
+  const btn = document.getElementById("theme-toggle");
+  if (btn) {
+    btn.textContent = t === "light" ? "☀" : "☾";
+    btn.title = t === "light" ? "Koyu temaya geç" : "Açık temaya geç";
+  }
+  try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
+}
+function initTheme() {
+  applyTheme(currentTheme()); // head'de zaten uygulanmış olabilir; ikonu senkronla
+  const btn = document.getElementById("theme-toggle");
+  if (btn) btn.addEventListener("click", () => applyTheme(currentTheme() === "light" ? "dark" : "light"));
+}
+initTheme();
+
 /* ————— Başlat ————— */
 renderTimeline();
 renderHUD();
