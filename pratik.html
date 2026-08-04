@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KPSS Tarih · Pratik Soru Bankası</title>
+  <link rel="stylesheet" href="pratik.css" />
+</head>
+<body>
+<div class="pr-app">
+
+  <!-- Topbar -->
+  <header class="pr-topbar">
+    <div class="brand">
+      <h1>KPSS Tarih · Pratik</h1>
+      <span>Soru Bankası & Simülatör</span>
+    </div>
+    <div class="spacer"></div>
+    <a href="index.html" class="pr-back">← Zaman Çizelgesi</a>
+  </header>
+
+  <!-- HOME SCREEN -->
+  <div class="pr-screen active" id="screen-home">
+    <div class="home-hero">
+      <div class="eyebrow">KPSS TARİH</div>
+      <h2>Soru Bankası</h2>
+      <p>Kategori seç, soru sayısını ve süreyi ayarla — ÖSYM tarzı sorularla pratik yap.</p>
+    </div>
+
+    <div class="kat-grid" id="kat-grid">
+      <!-- JS ile doldurulacak -->
+    </div>
+
+    <div class="home-settings">
+      <label for="sel-sayi">Soru Sayısı:</label>
+      <select id="sel-sayi">
+        <option value="10">10 Soru</option>
+        <option value="25">25 Soru</option>
+        <option value="50" selected>50 Soru (Tam Sınav)</option>
+      </select>
+
+      <label for="sel-sure" style="margin-left:12px">Soru Başına Süre:</label>
+      <select id="sel-sure">
+        <option value="0">Süresiz</option>
+        <option value="45">45 saniye</option>
+        <option value="60" selected>60 saniye</option>
+        <option value="90">90 saniye</option>
+      </select>
+
+      <label for="sel-zorluk" style="margin-left:12px">Zorluk:</label>
+      <select id="sel-zorluk">
+        <option value="hepsi" selected>Hepsi</option>
+        <option value="orta">Yalnızca Orta</option>
+        <option value="zor">Yalnızca Zor (ÖSYM Tuzak)</option>
+      </select>
+    </div>
+
+    <button class="btn-start" id="btn-start">Sınava Başla →</button>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div class="pr-screen" id="screen-quiz">
+    <div class="pr-timer-bar"><div class="pr-timer-fill" id="timer-fill"></div></div>
+
+    <div class="quiz-meta">
+      <span class="q-counter">Soru <b id="q-index">1</b> / <b id="q-total">50</b></span>
+      <span class="q-kat" id="q-kat-chip" style="--kat-renk: var(--gold)">Karma</span>
+      <div class="spacer"></div>
+      <span class="q-score">Doğru: <b id="q-dogru-say">0</b></span>
+      <span class="q-timer" id="q-timer-text">60</span>
+    </div>
+
+    <div class="quiz-body" id="quiz-body">
+      <!-- JS ile doldurulacak -->
+    </div>
+
+    <div class="quiz-footer">
+      <span class="quiz-hint" id="quiz-hint">Bir şık seç</span>
+      <button class="btn-next" id="btn-next">Sonraki Soru →</button>
+    </div>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div class="pr-screen" id="screen-result">
+    <div class="result-wrap">
+
+      <div class="result-hero">
+        <div class="score-big" id="res-skor">0/0</div>
+        <div class="score-sub" id="res-sub">soruda doğru</div>
+        <div class="grade" id="res-grade"></div>
+      </div>
+
+      <div class="result-breakdown">
+        <h3>Kategori Analizi</h3>
+        <div id="res-breakdown"></div>
+      </div>
+
+      <div class="result-wrongs" id="res-wrongs-wrap" style="display:none">
+        <h3>Yanlış Yaptıklarım</h3>
+        <div id="res-wrongs-list"></div>
+      </div>
+
+      <div class="result-btns">
+        <button class="btn-retry" id="btn-retry">Aynı Ayarlarla Tekrar</button>
+        <button class="btn-home" id="btn-home">← Ana Ekrana Dön</button>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script src="pratik_data.js"></script>
+<script>
+/* ──────────────────────────────────────────────────────────────────────────
+   KPSS Pratik — Soru Bankası JS
+   State makinesi: home → quiz → result → (home veya quiz)
+   Hiç dış kütüphane yok; localStorage: hata kutusu (ileride genişletilecek)
+────────────────────────────────────────────────────────────────────────── */
+(function () {
+  "use strict";
+
+  /* ─── Durum ───────────────────────────────────────────── */
+  let state = {
+    seciliKat: "hepsi",
+    soru_sayisi: 50,
+    sure: 60,
+    zorluk: "hepsi",
+    sorular: [],        // aktif soru listesi (karıştırılmış)
+    idx: 0,             // mevcut soru indeksi
+    cevaplar: {},       // { soruId: "A" | null }
+    dogru_say: 0,
+    timerInterval: null,
+    timerLeft: 0,
+    cevapVerildi: false
+  };
+
+  /* ─── DOM ─────────────────────────────────────────────── */
+  const $ = id => document.getElementById(id);
+  const screens = {
+    home:   $("screen-home"),
+    quiz:   $("screen-quiz"),
+    result: $("screen-result")
+  };
+
+  function goScreen(name) {
+    Object.values(screens).forEach(s => s.classList.remove("active"));
+    screens[name].classList.add("active");
+  }
+
+  /* ─── Kategori kartları oluştur ───────────────────────── */
+  function buildKatGrid() {
+    const grid = $("kat-grid");
+    grid.innerHTML = "";
+
+    // Hepsi kartı
+    const allCard = makeKatCard("hepsi", PRATIK_KATEGORILER.hepsi, PRATIK_SORULAR.length);
+    allCard.classList.add("selected");
+    grid.appendChild(allCard);
+
+    // Bireysel kategoriler
+    const keys = Object.keys(PRATIK_KATEGORILER).filter(k => k !== "hepsi");
+    keys.forEach(key => {
+      const sayi = PRATIK_SORULAR.filter(q => q.kategori === key).length;
+      if (sayi === 0) return;
+      grid.appendChild(makeKatCard(key, PRATIK_KATEGORILER[key], sayi));
+    });
+  }
+
+  function makeKatCard(key, meta, sayi) {
+    const div = document.createElement("div");
+    div.className = "kat-card";
+    div.style.setProperty("--kat-renk", meta.renk);
+    div.dataset.kat = key;
+    div.innerHTML = `
+      <div class="kat-ikon">${meta.ikon}</div>
+      <div class="kat-ad">${meta.ad}</div>
+      <div class="kat-sayi">${sayi} soru</div>
+    `;
+    div.addEventListener("click", () => selectKat(key));
+    return div;
+  }
+
+  function selectKat(key) {
+    state.seciliKat = key;
+    document.querySelectorAll(".kat-card").forEach(c => {
+      c.classList.toggle("selected", c.dataset.kat === key);
+    });
+  }
+
+  /* ─── Sınav başlat ────────────────────────────────────── */
+  $("btn-start").addEventListener("click", startQuiz);
+
+  function startQuiz() {
+    // Ayarları oku
+    state.soru_sayisi = parseInt($("sel-sayi").value);
+    state.sure        = parseInt($("sel-sure").value);
+    state.zorluk      = $("sel-zorluk").value;
+
+    // Soruları filtrele
+    let pool = PRATIK_SORULAR.slice();
+    if (state.seciliKat !== "hepsi") {
+      pool = pool.filter(q => q.kategori === state.seciliKat);
+    }
+    if (state.zorluk !== "hepsi") {
+      pool = pool.filter(q => q.zorluk === state.zorluk);
+    }
+    if (pool.length === 0) {
+      alert("Seçilen filtreye uygun soru bulunamadı. Ayarları değiştirin.");
+      return;
+    }
+
+    // Karıştır ve sınırla
+    pool = shuffle(pool);
+    state.sorular = pool.slice(0, Math.min(state.soru_sayisi, pool.length));
+    state.idx = 0;
+    state.cevaplar = {};
+    state.dogru_say = 0;
+    state.cevapVerildi = false;
+
+    $("q-total").textContent = state.sorular.length;
+    $("q-dogru-say").textContent = "0";
+
+    goScreen("quiz");
+    renderSoru();
+  }
+
+  /* ─── Soru render ─────────────────────────────────────── */
+  function renderSoru() {
+    stopTimer();
+    state.cevapVerildi = false;
+
+    const q = state.sorular[state.idx];
+    const meta = PRATIK_KATEGORILER[q.kategori] || PRATIK_KATEGORILER.hepsi;
+    const num  = state.idx + 1;
+
+    // Meta bar
+    $("q-index").textContent = num;
+    const chip = $("q-kat-chip");
+    chip.textContent = meta.ad;
+    chip.style.setProperty("--kat-renk", meta.renk);
+
+    // Body
+    const body = $("quiz-body");
+    body.innerHTML = `
+      <div class="q-num-display" style="--kat-renk:${meta.renk}">${String(num).padStart(2,"0")}</div>
+      <div>
+        <span class="q-zorluk ${q.zorluk}">${q.zorluk === "zor" ? "⚠ ÖSYM Tuzak" : "Orta"}</span>
+      </div>
+      <div class="q-text">${escHtml(q.soru)}</div>
+      <div class="q-options" id="q-opts"></div>
+      <div class="q-explanation" id="q-exp"></div>
+    `;
+
+    const optsDiv = document.getElementById("q-opts");
+    Object.entries(q.secenekler).forEach(([key, val]) => {
+      const btn = document.createElement("button");
+      btn.className = "q-opt";
+      btn.dataset.key = key;
+      btn.innerHTML = `<span class="opt-key">${key}</span><span>${escHtml(val)}</span>`;
+      btn.addEventListener("click", () => secimiYap(key, q));
+      optsDiv.appendChild(btn);
+    });
+
+    $("btn-next").classList.remove("show");
+    $("quiz-hint").textContent = "Bir şık seç";
+
+    body.scrollTop = 0;
+
+    if (state.sure > 0) startTimer(state.sure, q);
+  }
+
+  function secimiYap(key, q) {
+    if (state.cevapVerildi) return;
+    state.cevapVerildi = true;
+    stopTimer();
+
+    state.cevaplar[q.id] = key;
+    const dogru = key === q.dogru;
+    if (dogru) {
+      state.dogru_say++;
+      $("q-dogru-say").textContent = state.dogru_say;
+    }
+
+    // Şıkları boyala
+    document.querySelectorAll(".q-opt").forEach(btn => {
+      btn.disabled = true;
+      const k = btn.dataset.key;
+      if (k === q.dogru) btn.classList.add("correct");
+      else if (k === key && !dogru) btn.classList.add("wrong");
+    });
+
+    // Açıklama
+    const expDiv = document.getElementById("q-exp");
+    expDiv.textContent = q.aciklama;
+    expDiv.className = "q-explanation show" + (dogru ? "" : " wrong-exp");
+
+    // Timer fill kırmızı/yeşil
+    const fill = $("timer-fill");
+    fill.style.width = "100%";
+    fill.style.background = dogru ? "var(--ok)" : "var(--err)";
+
+    $("quiz-hint").textContent = dogru ? "✓ Doğru!" : "✗ Yanlış";
+    $("btn-next").classList.add("show");
+    $("btn-next").textContent = state.idx + 1 < state.sorular.length ? "Sonraki Soru →" : "Sonuçları Gör →";
+  }
+
+  $("btn-next").addEventListener("click", () => {
+    state.idx++;
+    if (state.idx < state.sorular.length) {
+      renderSoru();
+    } else {
+      showResult();
+    }
+  });
+
+  /* ─── Timer ───────────────────────────────────────────── */
+  function startTimer(sn, q) {
+    state.timerLeft = sn;
+    const fill = $("timer-fill");
+    const txt  = $("q-timer-text");
+    fill.style.transition = "none";
+    fill.style.background = "var(--gold)";
+    fill.style.width = "100%";
+    txt.textContent = sn;
+    txt.className = "q-timer";
+
+    // Animasyonu tetiklemek için bir frame bekle
+    requestAnimationFrame(() => {
+      fill.style.transition = `width ${sn}s linear`;
+      fill.style.width = "0%";
+    });
+
+    state.timerInterval = setInterval(() => {
+      state.timerLeft--;
+      txt.textContent = state.timerLeft;
+      if (state.timerLeft <= 10) {
+        txt.className = "q-timer warn";
+        fill.classList.add("warn");
+      }
+      if (state.timerLeft <= 0) {
+        stopTimer();
+        if (!state.cevapVerildi) {
+          // Süre doldu — doğruyu göster, yanlış say
+          state.cevapVerildi = true;
+          state.cevaplar[q.id] = null;
+          document.querySelectorAll(".q-opt").forEach(btn => {
+            btn.disabled = true;
+            if (btn.dataset.key === q.dogru) btn.classList.add("correct");
+          });
+          const expDiv = document.getElementById("q-exp");
+          expDiv.textContent = "⏱ Süre doldu. " + q.aciklama;
+          expDiv.className = "q-explanation show wrong-exp";
+          $("quiz-hint").textContent = "⏱ Süre doldu";
+          $("btn-next").classList.add("show");
+          $("btn-next").textContent = state.idx + 1 < state.sorular.length ? "Sonraki Soru →" : "Sonuçları Gör →";
+        }
+      }
+    }, 1000);
+  }
+
+  function stopTimer() {
+    if (state.timerInterval) {
+      clearInterval(state.timerInterval);
+      state.timerInterval = null;
+    }
+    $("q-timer-text").className = "q-timer";
+    $("timer-fill").classList.remove("warn");
+  }
+
+  /* ─── Sonuç ekranı ────────────────────────────────────── */
+  function showResult() {
+    stopTimer();
+    goScreen("result");
+
+    const total = state.sorular.length;
+    const dogru = state.dogru_say;
+    const pct   = Math.round((dogru / total) * 100);
+
+    $("res-skor").textContent = `${dogru}/${total}`;
+    $("res-sub").textContent  = `soruda doğru — %${pct} başarı`;
+
+    const gradeEl = $("res-grade");
+    if (pct >= 80) {
+      gradeEl.textContent = "Harika! 🏆";
+      gradeEl.className = "grade grade-great";
+    } else if (pct >= 60) {
+      gradeEl.textContent = "İyi 👍";
+      gradeEl.className = "grade grade-good";
+    } else {
+      gradeEl.textContent = "Tekrar Et 📚";
+      gradeEl.className = "grade grade-fail";
+    }
+
+    // Kategori breakdown
+    const bd = $("res-breakdown");
+    bd.innerHTML = "";
+    const katStats = {};
+    state.sorular.forEach(q => {
+      if (!katStats[q.kategori]) katStats[q.kategori] = { dogru: 0, toplam: 0 };
+      katStats[q.kategori].toplam++;
+      const verilen = state.cevaplar[q.id];
+      if (verilen === q.dogru) katStats[q.kategori].dogru++;
+    });
+
+    Object.entries(katStats).forEach(([key, stat]) => {
+      const meta = PRATIK_KATEGORILER[key] || { ad: key, renk: "var(--gold)" };
+      const p = Math.round((stat.dogru / stat.toplam) * 100);
+      const row = document.createElement("div");
+      row.className = "kat-row";
+      row.innerHTML = `
+        <span class="kat-lbl">${meta.ikon || ""} ${meta.ad}</span>
+        <div class="kat-bar-wrap">
+          <div class="kat-bar-fill" style="width:0%;background:${barColor(p)}"></div>
+        </div>
+        <span class="kat-pct">${stat.dogru}/${stat.toplam}</span>
+      `;
+      bd.appendChild(row);
+      // Animasyon için kısa gecikme
+      requestAnimationFrame(() => {
+        row.querySelector(".kat-bar-fill").style.width = p + "%";
+      });
+    });
+
+    // Yanlış sorular listesi
+    const yanlis = state.sorular.filter(q => state.cevaplar[q.id] !== q.dogru);
+    const wWrap = $("res-wrongs-wrap");
+    const wList = $("res-wrongs-list");
+    wList.innerHTML = "";
+    if (yanlis.length > 0) {
+      wWrap.style.display = "block";
+      yanlis.forEach(q => {
+        const verilen = state.cevaplar[q.id];
+        const item = document.createElement("div");
+        item.className = "wrong-item";
+        item.innerHTML = `
+          <div class="wi-soru">${escHtml(q.soru.length > 110 ? q.soru.slice(0, 110) + "…" : q.soru)}</div>
+          <div class="wi-meta">
+            <span class="wi-senin">Seçtiğin: ${verilen ? verilen + ") " + escHtml(q.secenekler[verilen] || "Süre doldu") : "⏱ Süre doldu"}</span>
+            <span class="wi-dogru">Doğrusu: ${q.dogru}) ${escHtml(q.secenekler[q.dogru])}</span>
+          </div>
+        `;
+        wList.appendChild(item);
+      });
+    } else {
+      wWrap.style.display = "none";
+    }
+
+    // Hata kutusuna kaydet (localStorage)
+    saveHataKutusu(yanlis);
+
+    screens.result.scrollTop = 0;
+  }
+
+  function barColor(p) {
+    if (p >= 75) return "var(--ok)";
+    if (p >= 50) return "var(--gold)";
+    return "var(--garnet)";
+  }
+
+  /* ─── Hata Kutusu (localStorage) ─────────────────────── */
+  function saveHataKutusu(yanlisSorular) {
+    try {
+      const now = Date.now();
+      const existing = JSON.parse(localStorage.getItem("kpss-hata-kutusu") || "{}");
+      yanlisSorular.forEach(q => {
+        if (!existing[q.id]) {
+          existing[q.id] = { yanlisSay: 0, sonYanlis: 0, sonraTekrar: now };
+        }
+        existing[q.id].yanlisSay++;
+        existing[q.id].sonYanlis = now;
+        existing[q.id].sonraTekrar = now + 24 * 60 * 60 * 1000; // 1 gün sonra
+      });
+      localStorage.setItem("kpss-hata-kutusu", JSON.stringify(existing));
+    } catch (e) { /* localStorage erişim hatası */ }
+  }
+
+  /* ─── Sonuç butonları ─────────────────────────────────── */
+  $("btn-retry").addEventListener("click", () => {
+    startQuiz();
+  });
+  $("btn-home").addEventListener("click", () => {
+    stopTimer();
+    goScreen("home");
+  });
+
+  /* ─── Klavye kısayolları ──────────────────────────────── */
+  document.addEventListener("keydown", e => {
+    if (screens.quiz.classList.contains("active")) {
+      const keys = ["a","b","c","d","e"];
+      const idx  = keys.indexOf(e.key.toLowerCase());
+      if (idx !== -1 && !state.cevapVerildi) {
+        const q    = state.sorular[state.idx];
+        const sik  = Object.keys(q.secenekler)[idx];
+        if (sik) secimiYap(sik, q);
+      }
+      if ((e.key === "Enter" || e.key === " " || e.key === "ArrowRight") && state.cevapVerildi) {
+        const btn = $("btn-next");
+        if (btn.classList.contains("show")) btn.click();
+      }
+    }
+  });
+
+  /* ─── Yardımcılar ─────────────────────────────────────── */
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function escHtml(t) {
+    return String(t ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  /* ─── Init ────────────────────────────────────────────── */
+  buildKatGrid();
+
+})();
+</script>
+</body>
+</html>

@@ -31,6 +31,15 @@
 
   const JOURNEY = buildJourney();
 
+  // Cumhuriyet öğrenim modülü konularına sıra numarası (01, 02, …)
+  const KONU_NO = {};
+  (function () {
+    let n = 0;
+    JOURNEY.forEach(it => {
+      if (it.type === "sultan" && window.KonuModulu && KonuModulu.isKonu(it.s)) KONU_NO[it.s.id] = ++n;
+    });
+  })();
+
   let idx = 0;
   let autoplay = false;
   let autoTimer = null;
@@ -199,11 +208,21 @@
     if (trackEl) trackEl.textContent = "♫ " + (TRACK_AD[era] || "Osmanlı teması");
 
     const stage = root.querySelector("#cin-stage");
-    stage.innerHTML = it.type === "gate" ? gateSlide(it) : sultanSlide(it);
+    const konu = it.type === "sultan" && window.KonuModulu && KonuModulu.isKonu(it.s);
 
-    // yıl sayacı
-    const cnt = stage.querySelector(".cin-count");
-    if (cnt) countUp(cnt);
+    if (konu) {
+      stage.classList.add("km-mode");
+      stage.innerHTML = KonuModulu.slideHTML(it.s, KONU_NO[it.s.id] || 1);
+      stage.scrollTop = 0;
+      KonuModulu.init(stage, it.s, KONU_NO[it.s.id] || 1);
+      stopAuto();  // tam konu sayfası: kullanıcı okuyup etkileşecek, otomatik geçme
+    } else {
+      stage.classList.remove("km-mode");
+      stage.innerHTML = it.type === "gate" ? gateSlide(it) : sultanSlide(it);
+      // yıl sayacı
+      const cnt = stage.querySelector(".cin-count");
+      if (cnt) countUp(cnt);
+    }
 
     // galeri thumbnail'ları — tıklayınca ana görsel + başlık değişir
     const thumbs = [...stage.querySelectorAll(".cin-thumb")];

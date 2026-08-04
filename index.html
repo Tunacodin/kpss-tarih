@@ -6,9 +6,11 @@
   <title>KPSS Tarih · Osmanlı Padişahları Zaman Çizelgesi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Marcellus&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="cinema.css" />
+  <link rel="stylesheet" href="ogrenim.css" />
+  <link rel="stylesheet" href="pratik.css" />
   <script>
     /* Temayı boyamadan önce uygula (FOUC önlemi) */
     (function () {
@@ -52,6 +54,11 @@
 
       <button class="music-toggle" id="music-toggle" title="Arka plan müziği" aria-label="Müzik aç/kapat"></button>
 
+      <button class="cinema-open" id="pratik-open" title="Pratik Soru Bankası">
+        <span class="co-ico">⚔️</span>
+        <span class="co-txt">Pratik<br>Soru Bankası</span>
+      </button>
+
       <button class="cinema-open" id="cinema-open" title="Sinematik zaman yolculuğu">
         <span class="co-ico">🎬</span>
         <span class="co-txt">Sinematik<br>Yolculuk</span>
@@ -76,10 +83,179 @@
 
   <div class="toast" id="toast"></div>
 
+  <!-- Pratik — overlay panel (3 modül: Soru Bankası, Eşleştirme, Hata Kutusu) -->
+  <div class="pratik-overlay" id="pratik-overlay">
+    <div class="pr-app">
+
+      <header class="pr-topbar">
+        <div class="brand">
+          <h1>KPSS Tarih · Pratik</h1>
+          <span id="pr-topbar-sub">Modül Seç</span>
+        </div>
+        <div class="spacer"></div>
+        <button class="pr-back" id="pratik-close">✕ Kapat</button>
+      </header>
+
+      <!-- ① MODÜL SEÇİCİ -->
+      <div class="pr-screen active" id="screen-home">
+        <div class="modul-hero">
+          <div class="eyebrow">KPSS TARİH</div>
+          <h2>Pratik Çalışma</h2>
+          <p>Bir çalışma modu seç.</p>
+        </div>
+        <div class="modul-grid">
+          <button class="modul-kart" data-modul="sorubankasi" style="--mk-renk:#d9a94b">
+            <div class="mk-ikon">⚔️</div>
+            <div class="mk-ad">Soru Bankası</div>
+            <div class="mk-acik">50 ÖSYM tarzı soru · Kategori filtresi · Timer</div>
+          </button>
+          <button class="modul-kart" data-modul="eslestirme" style="--mk-renk:#e07b3a">
+            <div class="mk-ikon">🃏</div>
+            <div class="mk-ad">Hızlı Eşleştirme</div>
+            <div class="mk-acik">Padişah↔Islahat · Savaş↔Sonuç · Antlaşma↔Önemi</div>
+          </button>
+          <button class="modul-kart" data-modul="hatakutusu" style="--mk-renk:#5a8fb6">
+            <div class="mk-ikon">📦</div>
+            <div class="mk-ad">Hata Kutusu</div>
+            <div class="mk-acik" id="mk-hata-acik">Yanlış yaptıklarını spaced repetition ile tekrar çöz</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- ② SORU BANKASI — ayarlar -->
+      <div class="pr-screen" id="screen-sorubankasi">
+        <div class="home-hero">
+          <div class="eyebrow">KPSS TARİH</div>
+          <h2>Soru Bankası</h2>
+          <p>Kategori seç, soru sayısını ve süreyi ayarla — ÖSYM tarzı sorularla pratik yap.</p>
+        </div>
+        <div class="kat-grid" id="kat-grid"></div>
+        <div class="home-settings">
+          <label for="sel-sayi">Soru Sayısı:</label>
+          <select id="sel-sayi">
+            <option value="10">10 Soru</option>
+            <option value="25">25 Soru</option>
+            <option value="50" selected>50 Soru (Tam Sınav)</option>
+          </select>
+          <label for="sel-sure" style="margin-left:12px">Soru Başına Süre:</label>
+          <select id="sel-sure">
+            <option value="0">Süresiz</option>
+            <option value="45">45 saniye</option>
+            <option value="60" selected>60 saniye</option>
+            <option value="90">90 saniye</option>
+          </select>
+          <label for="sel-zorluk" style="margin-left:12px">Zorluk:</label>
+          <select id="sel-zorluk">
+            <option value="hepsi" selected>Hepsi</option>
+            <option value="orta">Yalnızca Orta</option>
+            <option value="zor">Yalnızca Zor (ÖSYM Tuzak)</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center">
+          <button class="btn-start" id="btn-start">Sınava Başla →</button>
+          <button class="btn-home" id="btn-sb-geri">← Modüller</button>
+        </div>
+      </div>
+
+      <!-- ③ QUIZ (soru bankası + hata kutusu tarafından paylaşılır) -->
+      <div class="pr-screen" id="screen-quiz">
+        <div class="pr-timer-bar"><div class="pr-timer-fill" id="timer-fill"></div></div>
+        <div class="quiz-meta">
+          <span class="q-counter">Soru <b id="q-index">1</b> / <b id="q-total">50</b></span>
+          <span class="q-kat" id="q-kat-chip" style="--kat-renk: var(--gold)">Karma</span>
+          <div class="spacer"></div>
+          <span class="q-score">Doğru: <b id="q-dogru-say">0</b></span>
+          <span class="q-timer" id="q-timer-text">60</span>
+        </div>
+        <div class="quiz-body" id="quiz-body"></div>
+        <div class="quiz-footer">
+          <span class="quiz-hint" id="quiz-hint">Bir şık seç</span>
+          <button class="btn-next" id="btn-next">Sonraki Soru →</button>
+        </div>
+      </div>
+
+      <!-- ④ QUIZ SONUÇ -->
+      <div class="pr-screen" id="screen-result">
+        <div class="result-wrap">
+          <div class="result-hero">
+            <div class="score-big" id="res-skor">0/0</div>
+            <div class="score-sub" id="res-sub">soruda doğru</div>
+            <div class="grade" id="res-grade"></div>
+          </div>
+          <div class="result-breakdown">
+            <h3>Kategori Analizi</h3>
+            <div id="res-breakdown"></div>
+          </div>
+          <div class="result-wrongs" id="res-wrongs-wrap" style="display:none">
+            <h3>Yanlış Yaptıklarım</h3>
+            <div id="res-wrongs-list"></div>
+          </div>
+          <div class="result-btns">
+            <button class="btn-retry" id="btn-retry">Aynı Ayarlarla Tekrar</button>
+            <button class="btn-home" id="btn-home">← Modüller</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑤ EŞLEŞTİRME — set seçici -->
+      <div class="pr-screen" id="screen-eslestirme">
+        <div class="home-hero">
+          <div class="eyebrow">HIZLI EŞLEŞTİRME</div>
+          <h2>Set Seç</h2>
+          <p>Sol kolondaki kavramı, sağ kolondaki doğru eşiyle eşleştir.</p>
+        </div>
+        <div class="esles-set-grid" id="esles-set-grid"></div>
+        <button class="btn-home" id="btn-esles-geri" style="margin-top:20px">← Modüller</button>
+      </div>
+
+      <!-- ⑥ EŞLEŞTİRME — oyun -->
+      <div class="pr-screen" id="screen-eslestirme-oyun">
+        <div class="esles-meta">
+          <button class="pr-back esles-geri-btn" id="esles-oyun-geri">← Setler</button>
+          <span class="esles-set-baslik" id="esles-set-baslik">Padişah → Islahat</span>
+          <div class="spacer"></div>
+          <span class="esles-skor-chip"><b id="esles-dogru">0</b> / <b id="esles-toplam">6</b></span>
+        </div>
+        <div class="esles-alan" id="esles-alan">
+          <div class="esles-sol" id="esles-sol"></div>
+          <div class="esles-sag" id="esles-sag"></div>
+        </div>
+        <div class="esles-aciklama" id="esles-aciklama"></div>
+        <div class="esles-bitti" id="esles-bitti" style="display:none">
+          <div class="esles-sonuc-txt" id="esles-sonuc-txt"></div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <button class="btn-start" id="esles-tekrar">Tekrar →</button>
+            <button class="btn-home" id="esles-eve">← Modüller</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑦ HATA KUTUSU -->
+      <div class="pr-screen" id="screen-hata">
+        <div class="hata-wrap">
+          <div class="hata-hero">
+            <div class="hata-ikon">📦</div>
+            <h2>Hata Kutusu</h2>
+            <p>Yanlış yaptığın soruları spaced repetition ile tekrar çöz.<br>Doğru yapınca 3 gün, yanlış yapınca 1 gün sonraya ertelenir.</p>
+          </div>
+          <div class="hata-stats" id="hata-stats"></div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px">
+            <button class="btn-start" id="btn-hata-baslat">Çalışmaya Başla →</button>
+            <button class="btn-home" id="btn-hata-geri">← Modüller</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <script src="data.js"></script>
   <script src="data_ek.js"></script>
   <script src="app.js"></script>
+  <script src="ogrenim.js"></script>
   <script src="cinema.js"></script>
   <script src="music.js"></script>
+  <script src="pratik_data.js"></script>
+  <script src="pratik.js"></script>
 </body>
 </html>
